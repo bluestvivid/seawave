@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>A Colisão do Céu Com o Mar</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;1,500&family=Quicksand:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--rosa:#f4a1a8;--rosa-escuro:#e8747f;--rosa-claro:#fde8ea;--texto:#5a3a3e;--branco:#fff;box-sizing:border-box}
+*{box-sizing:border-box;margin:0}
+html,body{height:100%;overflow:hidden;background:var(--branco);color:var(--texto);font-family:'Quicksand',Georgia,sans-serif}
+h1,h2,.serif{font-family:'Playfair Display',Georgia,serif;font-weight:500}
+.tela{position:fixed;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;padding:24px;text-align:center}
+.tela.ativa{display:flex}
+
+/* boas-vindas */
+#boasvindas h1{font-size:clamp(1.6rem,5vw,2.6rem);max-width:640px;line-height:1.3}
+#boasvindas h1 span{color:var(--rosa-escuro);font-style:italic}
+.botoes{display:flex;gap:20px;margin-top:36px}
+.btn{font:600 1.1rem 'Quicksand',sans-serif;padding:14px 38px;border-radius:999px;border:2px solid var(--rosa);cursor:pointer;background:#fff;color:var(--rosa-escuro);transition:.2s}
+#sim{background:var(--rosa);color:#fff}
+#sim:hover{transform:scale(1.08);background:var(--rosa-escuro)}
+#nao{transition:left .25s ease,top .25s ease}
+.flutuante{position:fixed;z-index:5}
+.petala{position:fixed;top:-30px;color:var(--rosa);opacity:.5;animation:cai linear infinite;pointer-events:none}
+@keyframes cai{to{transform:translateY(110vh) rotate(360deg)}}
+
+/* transição */
+#trans{position:fixed;inset:0;z-index:50;display:none;align-items:center;justify-content:center;pointer-events:none;background:transparent}
+#trans svg{width:80px;height:80px;fill:var(--rosa)}
+
+/* timeline */
+#linha{position:absolute;left:0;right:0;top:50%;height:3px;background:var(--rosa-claro)}
+#timeline{overflow:hidden}
+#trilho{position:absolute;left:0;top:0;height:100%;display:flex;align-items:center;gap:70px;will-change:transform;padding-right:20vw}
+.item{position:relative;width:250px;flex:none;height:100%}
+.card{position:absolute;left:0;width:250px;background:#fff;border:2px solid var(--rosa-claro);border-radius:18px;padding:12px;box-shadow:0 8px 24px rgba(244,161,168,.25);text-align:left}
+.item.cima .card{bottom:calc(50% + 34px)}
+.item.baixo .card{top:calc(50% + 34px)}
+.foto{height:120px;border-radius:12px;background:linear-gradient(135deg,var(--rosa-claro),#fff);display:flex;align-items:center;justify-content:center;color:var(--rosa);font-size:2rem;overflow:hidden;margin-bottom:10px}
+.foto img{width:100%;height:100%;object-fit:cover}
+.data{color:var(--rosa-escuro);font-weight:600;font-size:.85rem}
+.card p{font-size:.95rem;margin-top:4px;line-height:1.4}
+.ponto{position:absolute;left:20px;top:50%;width:16px;height:16px;margin-top:-7px;border-radius:50%;background:var(--rosa);border:3px solid #fff;box-shadow:0 0 0 2px var(--rosa)}
+#titulo-tl{position:absolute;top:24px;left:0;right:0;font-size:1.3rem;color:var(--rosa-escuro);z-index:2}
+
+/* quebra-cabeça */
+#puzzle h2{font-size:clamp(1.3rem,4vw,1.9rem);margin-bottom:6px}
+#puzzle .dica{opacity:.7;margin-bottom:18px}
+#cena{perspective:1000px;width:min(300px,80vw);height:min(300px,80vw)}
+#giro{position:relative;width:100%;height:100%;transition:transform 1.4s cubic-bezier(.4,.2,.2,1);transform-style:preserve-3d}
+#giro.virou{transform:rotateY(180deg)}
+.face{position:absolute;inset:0;backface-visibility:hidden}
+#board{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr}
+.slot{border:1.5px dashed var(--rosa);background:rgba(253,232,234,.4);display:flex}
+.slot:nth-child(1){border-top-left-radius:50% 60%}.slot:nth-child(2){border-top-right-radius:50% 60%}
+.slot:nth-child(3){border-bottom-left-radius:50%}.slot:nth-child(4){border-bottom-right-radius:50%}
+.peca{width:100%;height:100%;touch-action:none;cursor:grab;flex:none}
+.peca svg{width:100%;height:100%;display:block;pointer-events:none;overflow:visible}
+.peca.arrastando{position:fixed;z-index:60;cursor:grabbing;filter:drop-shadow(0 8px 10px rgba(0,0,0,.2))}
+#tray{display:flex;gap:10px;margin-top:26px;min-height:80px;justify-content:center}
+#tray .peca{width:min(74px,18vw);height:min(74px,18vw)}
+#tray .peca{background:none}
+.verso{transform:rotateY(180deg);background:#fff;border:3px solid var(--rosa);border-radius:28px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:26px;box-shadow:0 12px 40px rgba(244,161,168,.4)}
+.verso .coracao{font-size:2.4rem;color:var(--rosa-escuro)}
+.verso p{font-family:'Playfair Display',Georgia,serif;font-style:italic;font-size:1.15rem;line-height:1.6;margin-top:10px}
+
+/* livro */
+#livro{perspective:1600px}
+#livro h2{font-size:1.4rem;color:var(--rosa-escuro);margin-bottom:22px}
+#livro{--pw:min(230px,40vw);--ph:calc(var(--pw)*1.4)}
+#livroWrap{position:relative;width:var(--pw);height:var(--ph);transition:transform 1s ease;transform-style:preserve-3d}
+#livroWrap.aberto{transform:translateX(calc(var(--pw)/2))}
+.folha{position:absolute;inset:0;transform-origin:left center;transform-style:preserve-3d;transition:transform 1.1s cubic-bezier(.5,.1,.3,1)}
+.folha.virada{transform:rotateY(-180deg)}
+.lado{position:absolute;inset:0;backface-visibility:hidden;border-radius:4px 14px 14px 4px;padding:22px 18px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#fff;border:1.5px solid var(--rosa-claro);box-shadow:0 6px 20px rgba(244,161,168,.25)}
+.lado.tras{transform:rotateY(180deg);border-radius:14px 4px 4px 14px;background:linear-gradient(90deg,var(--rosa-claro),#fff);color:var(--rosa);font-size:1.8rem}
+.lado.capa{background:var(--rosa);color:#fff;border-color:var(--rosa-escuro)}
+.lado.capa h3{font-family:'Playfair Display',Georgia,serif;font-weight:500;font-size:1.3rem;line-height:1.4}
+.lado .n{color:var(--rosa-escuro);font-weight:600;font-size:.85rem;margin-bottom:10px}
+.lado p{font-family:'Playfair Display',Georgia,serif;font-style:italic;font-size:1rem;line-height:1.6}
+.contracapa{position:absolute;inset:0;background:var(--rosa-escuro);border-radius:4px 14px 14px 4px}
+#livroBtn{margin-top:34px}
+
+/* vinil */
+#vinil h2{font-size:1.4rem;color:var(--rosa-escuro);margin-bottom:6px}
+#vinil .dica2{opacity:.7;margin-bottom:28px;min-height:1.4em}
+#disco{position:relative;width:min(400px,92vw);height:min(220px,46vw);cursor:pointer;--d:min(200px,42vw)}
+.capaAlbum{position:absolute;left:0;top:0;width:var(--d);height:var(--d);z-index:2;background:linear-gradient(135deg,var(--rosa-claro),#fff 60%);border:2px solid var(--rosa);border-radius:8px;box-shadow:0 10px 26px rgba(244,161,168,.4);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:14px;text-align:center}
+.capaAlbum b{font-family:'Playfair Display',Georgia,serif;font-size:1.25rem;color:var(--rosa-escuro);font-weight:500}
+.capaAlbum small{opacity:.7;font-size:.72rem;margin-bottom:8px}
+.capaAlbum p{font-size:.82rem;line-height:1.4;margin-top:8px}
+.vinilDisco{position:absolute;left:calc(var(--d)*.45);top:0;width:var(--d);height:var(--d);border-radius:50%;z-index:1;background:radial-gradient(circle,#f4a1a8 0 17%,#222 18%,#222 19%,transparent 19%),repeating-radial-gradient(circle,#1c1c1c 0 2px,#2c2c2c 3px 4px);box-shadow:0 8px 20px rgba(0,0,0,.25);transition:left 1s ease}
+.vinilDisco::after{content:'';position:absolute;left:47%;top:47%;width:6%;height:6%;border-radius:50%;background:#fff}
+#disco.tocando .vinilDisco{left:calc(var(--d)*.9);animation:gira 3s linear infinite}
+@keyframes gira{to{transform:rotate(360deg)}}
+#continuar{margin-top:28px;opacity:0;pointer-events:none;transition:opacity 1s}
+#continuar.vis{opacity:1;pointer-events:auto}
+
+/* timeline v2: cards maiores */
+.item{width:min(540px,88vw)}
+.card{width:min(540px,88vw);display:flex;gap:16px;align-items:center;padding:14px}
+.card .foto{flex:0 0 42%;height:auto;margin:0;background:var(--rosa-claro);min-height:80px}
+.card .foto img{width:100%;height:auto;max-height:calc(50vh - 110px);object-fit:contain;cursor:zoom-in;display:block}
+.card .txt{flex:1}
+.card p{font-size:.9rem;line-height:1.45}
+.ponto{left:calc(min(540px,88vw)/2 - 8px)}
+@media (max-width:640px){.card{flex-direction:column;gap:8px}.card .foto{flex:none;width:100%}.card .foto img{max-height:calc(50vh - 200px)}}
+#lb{position:fixed;inset:0;z-index:70;background:rgba(255,255,255,.96);display:none;align-items:center;justify-content:center;padding:20px;cursor:zoom-out}
+#lb.ativa{display:flex}
+#lb img{max-width:100%;max-height:100%;object-fit:contain;border-radius:12px;box-shadow:0 10px 40px rgba(244,161,168,.5)}
+
+/* v3: livro maior, texto da música, mensagem final */
+#livro{--pw:min(380px,44vw);--ph:min(calc(var(--pw)*1.5),68vh)}
+.lado{justify-content:flex-start;overflow-y:auto;padding:22px 20px}
+.lado.capa,.lado.tras,.lado.intro{justify-content:center}
+.lado h4{font-family:'Playfair Display',Georgia,serif;color:var(--rosa-escuro);font-size:1.1rem;margin-bottom:10px;font-weight:500;text-align:center}
+.lado p{font-size:clamp(.78rem,1.9vh,.95rem);line-height:1.55;font-style:normal;text-align:left}
+.lado.intro p{font-style:italic;text-align:center;font-size:1.1rem}
+@media (max-width:700px){#livro{--pw:88vw;--ph:min(calc(88vw*1.45),68vh)}#livroWrap.aberto{transform:none}}
+#vinil{overflow-y:auto;justify-content:flex-start;padding-top:28px}
+#textoMusica{max-width:560px;max-height:34vh;overflow-y:auto;margin-top:24px;padding:16px 20px;border-radius:16px;background:var(--rosa-claro);line-height:1.6;font-size:.95rem;text-align:left;opacity:0;transition:opacity 1.5s}
+#textoMusica.vis{opacity:1}
+#continuar{margin-bottom:24px}
+#cena{transition:width 1s,height 1s}
+#puzzle.final h2,#puzzle.final .dica{display:none}
+#cena.grande{width:min(580px,92vw);height:min(82vh,660px)}
+.verso{display:block;overflow-y:auto;padding:30px 28px;text-align:left}
+.verso .coracao{text-align:center}
+.verso p{font-size:clamp(.88rem,2.1vh,1rem);font-style:normal;line-height:1.65}
+.verso .par{display:block;margin-top:14px}
+.oculto{display:none!important}
+</style>
+</head>
+<body>
+
+<section id="boasvindas" class="tela ativa">
+  <h1>Bem-vindo ao <span>A Colisão do Céu Com o Mar</span>, gostaria de prosseguir?</h1>
+  <div class="botoes">
+    <button class="btn" id="sim">Sim</button>
+    <button class="btn" id="nao">Não</button>
+  </div>
+</section>
+
+<section id="timeline" class="tela">
+  <div id="titulo-tl" class="serif">Nossa história</div>
+  <div id="linha"></div>
+  <div id="trilho"></div>
+</section>
+
+<section id="livro" class="tela">
+  <h2>Motivos</h2>
+  <div id="livroWrap"><div class="contracapa"></div></div>
+  <button class="btn" id="livroBtn">Abrir livro</button>
+</section>
+
+<section id="vinil" class="tela">
+  <h2>Lembro de você ouvindo esta música</h2>
+  <p class="dica2" id="dica2">Clique no vinil</p>
+  <div id="disco">
+    <div class="vinilDisco"></div>
+    <div class="capaAlbum">
+      <small>NMIXX</small><b>Ocean</b>
+      
+    </div>
+  </div>
+  <div id="textoMusica"></div>
+  <button class="btn" id="continuar">Continuar ♥</button>
+</section>
+
+<section id="puzzle" class="tela">
+  <h2>Monte o coração</h2>
+  <p class="dica" id="dica">Arraste as peças para o lugar certo</p>
+  <div id="cena">
+    <div id="giro">
+      <div class="face" id="board"></div>
+      <div class="face verso">
+        <div class="coracao">♥</div>
+        <p id="mensagem">Aqui vai a sua mensagem de declaração.</p>
+      </div>
+    </div>
+  </div>
+  <div id="tray"></div>
+</section>
+
+<div id="lb"><img alt=""></div>
+<div id="trans"><svg viewBox="0 0 100 100"><path d="M50 90C20 65 5 48 5 30 5 16 16 8 27 8c10 0 19 6 23 14 4-8 13-14 23-14 11 0 22 8 22 22 0 18-15 35-45 60z"/></svg></div>
+
+<script>
+/* ====== CONTEÚDO (edite aqui) ====== */
+const EVENTOS = [
+  {data:'25/06/2026', foto:'fotos/ceu.png', texto:'Este é o céu no dia em que nos conhecemos. Eu entrei em uma call logo após ter aceitado o convite do servidor e você estava nela. Nós viramos amigos nesse dia, apesar de não ter mandado nenhuma mensagem no privado ainda.'},
+  {data:'07/07/2026', foto:'fotos/match.jpg', texto:'Nesse dia, criamos o nosso match. Eu não sei se em algum momento você já ouviu essa playlist, porém eu escuto e ela foi um marco importante para mim, já que precisei de bastante coragem para pedir.'},
+  {data:'16/07/2026', foto:'fotos/meubem.jpg', texto:'Esta foi a primeira vez que você me chamou de "meu bem". Eu consigo lembrar até hoje a sensação do meu coração aquecendo. Até hoje eu percebo que você não tem muita noção do quanto isso é especial e importa pra mim.'},
+  {data:'27/07/2026', foto:'fotos/metadinha.jpg', texto:'Dia que começou a nossa assombração do Ichigo e da Orihime. Parece bobo, mas eu fiquei muito feliz com os nossos perfis combinando e me deu a vontade absurda de usar metadinha com você a todo momento.'},
+  {data:'31/07/2026', foto:'fotos/meteoros.jpg', texto:'Você estava acordado comprando comida e eu aguardando o início de uma chuva de meteoros. Eu estava caindo de sono e você disposto a se certificar que eu não dormisse. Foi a primeira vez que eu vi um evento desses e ter você do meu lado só tornou tudo mais especial e memorável.'},
+  {data:'19/08/2026', foto:'fotos/jjs.jpg', texto:'Primeira vez jogando JJS juntos. Eu conseguia fazer o mais complicado, enquanto errava o básico. Eu sempre tive vontade de jogar com você, mas o medo era maior pois eu não sou muito boa em competitivo. Pode-se dizer que eu tinha bastante vergonha, mas lembro do quanto me diverti ao seu lado.'},
+  {data:'23/08/2026', foto:'fotos/valorant.jpg', texto:'Mesma coisa do JJS, eu baixei só para jogar com você. Ao mesmo tempo que eu me sentia mal com você sendo tão passa pano comigo, eu também gostava de ser compreendida e não julgada por alguém que considero tanto.'},
+  {data:'16/08/2026', foto:'fotos/emote.jpg', texto:'Esta aqui pelo meme, porém eu simplesmente amo esse momento. Você estava manifestando um emote bom no JJS, começou a fazer barulho e pediu pra eu fazer também. Arrancou uma grande risada minha e é uma lembrança que eu gosto de lembrar.'},
+  {data:'20/09/2026', foto:'fotos/craftgames.jpg', texto:'Um dos muitos prints que eu tenho de eu e você assistindo Craft Games. Essas sessões de vídeos, filmes, telando, etc são infinitamente especiais pra mim. Nessas horas você está dedicando sua atenção para mim e somente para mim, e eu, tendo como linguagem do amor tempo de qualidade, amo isso com todo meu coração.'}
+];
+const INTRO_LIVRO = `Você está sempre duvidando de si mesmo, então aqui vão motivos pelo qual eu gosto de você`;
+const MOTIVOS = [
+  {t:'Você é apaixonado', p:`Existem pessoas que a gente olha e não sabe bem o que atrai ela, eu me sinto assim às vezes, porém esse não é você. Você ama basquete e dedica todos os treinos para ter uma performance melhor que a anterior. Você se cobra quando não alcança o que quer e faz algo pra mudar isso. Perto de você eu pareço uma praticamente de estoicismo. Sua perseverança é algo lindo de se ver e eu gostaria que você pudesse enxergar também.`},
+  {t:'Você é um ótimo amigo', p:`É impossível contar nos dedos a quantidade de vezes que tive receio de dividir o fone com alguém só pelo meu gosto musical, mas você me mostrou que, com você, eu nunca preciso temer isso. Você escuta do que eu gosto e nunca me julgou por tal. Ao invés de falar 'viniccius13? que infantil. como você assiste isso?', você me convidou pra ver com você. Encontrar alguém assim não é mais tão incomum, mas você presta atenção, você genuinamente gosta de estar vendo/escutando aquilo e essa que é a raridade. Como alguém que ama passar tempo junto, isso é precioso demais.`},
+  {t:'Você é prestativo', p:`Eu fico surpresa com o quão prestativo você é mesmo sendo tão esquecido. Você pede desculpas quando não consegue me mandar mensagem, sempre pergunta se eu tô bem ou não, como foi o meu dia, se eu to atoa ou fazendo alguma coisa. As nossas conversas nunca são as mesmas e isso só mostra que você não está seguindo um roteiro, apenas está mandando mensagem porque quer conversar.`},
+  {t:'Você está do meu lado', p:`O meu maior medo atualmente é perder as pessoas com quem eu me importo. Quando você diz que sentiria minha falta se eu sumisse, que quer conversar comigo, que tá afim de fazer alguma coisa me da confirmação de que eu não preciso temer o abandono estando do seu lado. Pra você faz diferença se eu estou bem ou não, importa se algo que você fez me magoou, não é besteira se eu chorei com algo. Quando eu imagino a definição da palavra 'parceiro' no dicionário, eu consigo visualizar o seu nome lá em todos os sentidos que seja. Você é meu companheiro, você não se incomoda de estar comigo quando estou chorando ou rindo, você apenas está lá. Ter alguém do meu lado me faz querer continuar vivendo uma vida boa e faz o meu coração palpitar mais rápido.`}
+];
+const CAPA_TEXTO = `A música 'Ocean' do NMIXX retrata a profundidade dos sentimentos a partir da imagem do oceano. Eu associo essa música a você já que seu username é sea, mas também eu consigo ver o mar em você e você no mar. <em>"O oceano que despertou a mim, que estava sozinha em uma ilha isolada"</em> e <em>"Estou me afogando no oceano do seu coração"</em> são os meus versos favoritos e os quais eu pensei em você na primeira vez que ouvi a música. O mar é imprevisível, pode ser calmo ou agitado, vazio ou repleto de vida, profundo ou superficial, você não é diferente. Eu quero descobrir mais sobre você, quero ver suas fases calmas e agitadas, quero descobrir a profundidade dos sentimentos que você não mostra pra ninguém, quero desbravar a vida que você teve antes e a que terá.`;
+const MUSICA_SRC = 'ocean.mp3'; // arquivo da música (na mesma pasta do index.html)
+const MENSAGEM = `Não tem mais como esconder que eu amo você. Desde o correio elegante quando eu ainda tinha uma quedinha, até o dia que te mandei 'love.' do wave to earth (o que você não olhou a tradução). Eu não gosto de você puramente pela aparência ou por me tratar bem, eu gosto de você pois você é prestativo, você é um amigo incrível, você tem paixão pelo o que faz, você se importa.
+
+Eu quero continuar recebendo fotos dos seus porquinhos da índia, quero continuar ouvindo música e vendo vídeo com você, quero continuar rindo enquanto você corre pra acompanhar a letra da música que tá digitando. Eu tento não ligar para a distância, mas eu sinto saudades, eu quero conversar, quero fotos suas, quero ir ligações faladas com você, quero ir ao cinema com você, quero ter encontros bobinhos contigo. Você disse 'sério?' quando eu disse que ti é precioso pra mim, porém a esse ponto isso não devia ser surpresa para você. Eu gostaria que você pudesse ter acesso a mente das pessoas só pra perceber o quanto é especial pra elas.
+
+Pare de duvidar de si mesmo, pare de pensar no seu antigo relacionamento. Eu acredito, de verdade, que você pode alcançar tudo que sempre quis e nunca vai estar sozinho em qualquer trajetória da sua vida somente pelo simples fato de você ser você. Eu gosto de você e o meu desejo agora é que você conquiste toda a felicidade que merece.`;
+/* ==================================== */
+
+const $ = s => document.querySelector(s);
+const mostrar = id => { document.querySelectorAll('.tela').forEach(t=>t.classList.remove('ativa')); $(id).classList.add('ativa'); };
+
+/* pétalas decorativas */
+for(let i=0;i<14;i++){
+  const p=document.createElement('div');p.className='petala';p.textContent='♥';
+  p.style.left=Math.random()*100+'vw';p.style.fontSize=(10+Math.random()*16)+'px';
+  p.style.animationDuration=(9+Math.random()*10)+'s';p.style.animationDelay=(-Math.random()*15)+'s';
+  $('#boasvindas').appendChild(p);
+}
+
+/* transição de coração */
+function transicao(depois){
+  const t=$('#trans');t.style.display='flex';
+  const s=t.querySelector('svg');
+  s.animate([{transform:'scale(0)'},{transform:'scale(45)'}],{duration:1000,easing:'ease-in',fill:'forwards'}).onfinish=()=>{
+    depois();
+    t.animate([{opacity:1},{opacity:0}],{duration:700,fill:'forwards'}).onfinish=()=>{t.style.display='none';t.getAnimations().forEach(a=>a.cancel());s.getAnimations().forEach(a=>a.cancel());};
+  };
+}
+
+/* botão "Não" que foge */
+const nao=$('#nao');
+function fugir(e){
+  if(e){e.preventDefault();e.stopPropagation();}
+  const w=nao.offsetWidth,h=nao.offsetHeight,m=16;
+  let x,y,tries=0;
+  const sim=$('#sim').getBoundingClientRect();
+  do{
+    x=m+Math.random()*(innerWidth-w-2*m);
+    y=m+Math.random()*(innerHeight-h-2*m);
+    tries++;
+  }while(tries<30 && x<sim.right+20 && x+w>sim.left-20 && y<sim.bottom+20 && y+h>sim.top-20);
+  nao.classList.add('flutuante');
+  nao.style.left=x+'px';nao.style.top=y+'px';
+}
+['pointerenter','pointerdown','touchstart','mousedown','click','focus'].forEach(ev=>nao.addEventListener(ev,fugir,{passive:false}));
+
+$('#sim').addEventListener('click',()=>transicao(()=>{mostrar('#timeline');iniciarTimeline();}));
+
+/* timeline */
+let raf=null;
+function iniciarTimeline(){
+  const trilho=$('#trilho');
+  trilho.innerHTML=EVENTOS.map((e,i)=>`
+    <div class="item ${i%2?'baixo':'cima'}">
+      <div class="ponto"></div>
+      <div class="card">
+        <div class="foto">${e.foto?`<img src="${e.foto}" alt="">`:'♥'}</div>
+        <div class="txt"><div class="data">${e.data}</div><p>${e.texto}</p></div>
+      </div>
+    </div>`).join('');
+  let x=innerWidth, ultimo=performance.now(); let pausado=false;
+  const vel=55; // px por segundo
+  trilho.onpointerenter=()=>pausado=true; trilho.onpointerleave=()=>pausado=false;
+  trilho.style.transform=`translateX(${x}px)`;
+  function passo(t){
+    const dt=(t-ultimo)/1000;ultimo=t;
+    if(!pausado&&!window.lbAberto)x-=vel*dt;
+    trilho.style.transform=`translateX(${x}px)`;
+    const fim=x+trilho.scrollWidth-innerWidth*0.2;
+    if(fim<0){cancelAnimationFrame(raf);transicao(()=>{mostrar('#livro');iniciarLivro();});return;}
+    raf=requestAnimationFrame(passo);
+  }
+  raf=requestAnimationFrame(passo);
+}
+
+/* ampliar foto */
+$('#trilho').addEventListener('click',e=>{
+  if(e.target.tagName!=='IMG')return;
+  $('#lb img').src=e.target.src;$('#lb').classList.add('ativa');window.lbAberto=true;
+});
+$('#lb').addEventListener('click',()=>{$('#lb').classList.remove('ativa');window.lbAberto=false;});
+
+/* livro */
+function iniciarLivro(){
+  const wrap=$('#livroWrap'),btn=$('#livroBtn');
+  wrap.querySelectorAll('.folha').forEach(f=>f.remove());
+  wrap.classList.remove('aberto');
+  const conteudo=['capa',INTRO_LIVRO,...MOTIVOS];
+  const N=conteudo.length;
+  const folhas=conteudo.map((c,i)=>{
+    const f=document.createElement('div');f.className='folha';f.style.zIndex=N-i;
+    f.innerHTML=(i===0
+      ?'<div class="lado capa"><h3>Razões do porquê</h3></div>'
+      :i===1
+      ?`<div class="lado intro"><p>${c}</p></div>`
+      :`<div class="lado"><div class="n">${i-1} de ${MOTIVOS.length}</div><h4>${c.t}</h4><p>${c.p}</p></div>`)
+      +'<div class="lado tras">♥</div>';
+    wrap.appendChild(f);return f;
+  });
+  let atual=0,ocupado=false;
+  btn.textContent='Abrir livro';btn.disabled=false;
+  const virar=(i)=>{folhas[i].classList.add('virada');setTimeout(()=>folhas[i].style.zIndex=i+1,500);};
+  const desvirar=(i)=>{folhas[i].classList.remove('virada');setTimeout(()=>folhas[i].style.zIndex=N-i,500);};
+  btn.onclick=()=>{
+    if(ocupado)return;
+    if(atual===0){wrap.classList.add('aberto');virar(0);atual=1;btn.textContent=N>2?'Próxima página':'Fechar livro';return;}
+    if(atual<N-1){virar(atual);atual++;if(atual===N-1)btn.textContent='Fechar livro';return;}
+    // fechar: no último motivo, vira a página, depois fecha tudo
+    ocupado=true;btn.disabled=true;
+    let k=N-1;
+    const fecha=()=>{
+      if(k<0){wrap.classList.remove('aberto');setTimeout(()=>transicao(()=>{mostrar('#vinil');iniciarVinil();}),1200);return;}
+      desvirar(k);k--;setTimeout(fecha,450);
+    };
+    // apenas as folhas já viradas
+    k=atual-1;fecha();
+  };
+}
+
+/* vinil */
+let audio=null;
+function iniciarVinil(){
+  $('#textoMusica').innerHTML=CAPA_TEXTO;
+  const disco=$('#disco');
+  if(MUSICA_SRC&&!audio){audio=new Audio(MUSICA_SRC);audio.loop=true;}
+  disco.onclick=()=>{
+    const tocando=disco.classList.toggle('tocando');
+    $('#dica2').textContent=tocando?'♪ Ocean — NMIXX':'Clique no vinil';
+    if(audio){tocando?audio.play().catch(()=>{}):audio.pause();}
+    if(tocando){$('#textoMusica').classList.add('vis');setTimeout(()=>$('#continuar').classList.add('vis'),12000);}
+  };
+  $('#continuar').onclick=()=>transicao(()=>{mostrar('#puzzle');iniciarPuzzle();});
+}
+
+/* quebra-cabeça */
+const HEART='M50 90C20 65 5 48 5 30 5 16 16 8 27 8c10 0 19 6 23 14 4-8 13-14 23-14 11 0 22 8 22 22 0 18-15 35-45 60z';
+const QUAD=[[0,0],[50,0],[0,50],[50,50]];
+const CORES=['#f4a1a8','#f28b94','#f6adb3','#ee8089'];
+function svgPeca(i){
+  const [qx,qy]=QUAD[i];
+  return `<svg viewBox="${qx} ${qy} 50 50"><defs><clipPath id="c${i}"><rect x="${qx}" y="${qy}" width="50" height="50"/></clipPath></defs><path d="${HEART}" fill="${CORES[i]}" clip-path="url(#c${i})"/></svg>`;
+}
+function iniciarPuzzle(){
+  $('#mensagem').innerHTML=MENSAGEM.split('\n\n').map(t=>`<span class="par">${t}</span>`).join('');
+  const board=$('#board'),tray=$('#tray');
+  board.innerHTML='';tray.innerHTML='';
+  for(let i=0;i<4;i++){const s=document.createElement('div');s.className='slot';s.dataset.i=i;board.appendChild(s);}
+  const ordem=[0,1,2,3].sort(()=>Math.random()-.5);
+  if(ordem.every((v,k)=>v===k))ordem.reverse();
+  ordem.forEach(i=>{
+    const p=document.createElement('div');p.className='peca';p.dataset.i=i;p.innerHTML=svgPeca(i);
+    p.addEventListener('pointerdown',arrastar);tray.appendChild(p);
+  });
+}
+function arrastar(e){
+  const p=e.currentTarget;if(p.parentElement.classList.contains('slot'))return;
+  const r=p.getBoundingClientRect(),ox=e.clientX-r.left,oy=e.clientY-r.top;
+  const boardW=$('#board').offsetWidth/2;
+  const mover=(ev)=>{p.style.left=(ev.clientX-ox)+'px';p.style.top=(ev.clientY-oy)+'px';};
+  p.classList.add('arrastando');p.style.width=boardW+'px';p.style.height=boardW+'px';
+  p.style.left=(e.clientX-boardW/2)+'px';p.style.top=(e.clientY-boardW/2)+'px';
+  const ox2=boardW/2,oy2=boardW/2;
+  const mv=(ev)=>{p.style.left=(ev.clientX-ox2)+'px';p.style.top=(ev.clientY-oy2)+'px';};
+  document.body.appendChild(p);
+  p.setPointerCapture(e.pointerId);
+  p.addEventListener('pointermove',mv);
+  const soltar=(ev)=>{
+    p.removeEventListener('pointermove',mv);p.removeEventListener('pointerup',soltar);p.removeEventListener('pointercancel',soltar);
+    p.classList.remove('arrastando');p.style.cssText='';
+    const alvo=[...document.querySelectorAll('.slot')].find(s=>{const b=s.getBoundingClientRect();return ev.clientX>=b.left&&ev.clientX<=b.right&&ev.clientY>=b.top&&ev.clientY<=b.bottom;});
+    if(alvo && alvo.dataset.i===p.dataset.i && !alvo.children.length){
+      alvo.appendChild(p);alvo.style.border='none';alvo.style.background='none';
+      if([...document.querySelectorAll('.slot')].every(s=>s.children.length))concluir();
+    } else $('#tray').appendChild(p);
+  };
+  p.addEventListener('pointerup',soltar);p.addEventListener('pointercancel',soltar);
+}
+function concluir(){
+  $('#dica').textContent='♥ Coração completo ♥';
+  $('#tray').classList.add('oculto');
+  setTimeout(()=>$('#giro').classList.add('virou'),900);
+  setTimeout(()=>{$('#puzzle').classList.add('final');$('#cena').classList.add('grande');},2500);
+}
+</script>
+</body>
+</html>
